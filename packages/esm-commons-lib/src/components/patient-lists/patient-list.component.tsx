@@ -75,7 +75,9 @@ export const PatientList: React.FC = () => {
   return (
     <div>
       {isLoading && !searchTerm ? (
-        <DataTableSkeleton rowCount={5} columnCount={4} />
+        <div data-testid="data-table-skeleton">
+          <DataTableSkeleton rowCount={5} columnCount={4} />
+        </div>
       ) : patients?.length > 0 ? (
         <Layer>
           <Tile className={styles.tile}>
