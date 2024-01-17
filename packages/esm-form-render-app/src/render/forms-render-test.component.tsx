@@ -1,289 +1,171 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Dropdown, Form, Tabs, Tab, TabList, TabPanels, TabPanel, TextInput } from '@carbon/react';
+import React from 'react';
 import styles from './form-render.scss';
-import { Run, Maximize, UserData } from '@carbon/react/icons';
-import AceEditor from 'react-ace';
-import 'ace-builds/webpack-resolver';
-import { applyFormIntent, loadSubforms, OHRIForm, OHRIFormSchema } from '@openmrs/openmrs-form-engine-lib';
-import { useTranslation } from 'react-i18next';
-import { ConfigObject, useConfig, openmrsFetch } from '@openmrs/esm-framework';
-import { handleFormValidation } from '../form-validator';
+import {
+  DataTable,
+  Table,
+  TableHead,
+  TableRow,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TextInput,
+  NumberInput,
+  Checkbox,
+  DatePicker,
+  SelectItem,
+  RadioButtonGroup,
+  RadioButton,
+  Tooltip,
+  Select,
+  FlexGrid,
+  Row,
+  Column,
+  Grid,
+} from '@carbon/react';
+import { useLayoutType } from '@openmrs/esm-framework';
+
+const rows = [
+  {
+    id: 'a',
+    name: 'Loadbalancer1Loadbalancer1',
+    status: 'DisabledDisabledDisabled',
+  },
+  {
+    id: 'b',
+    name: 'Loadbalancer2Loadbalancer2',
+    status: 'StartingStartingStarting',
+  },
+  {
+    id: 'c',
+    name: 'Loadbalancer3Loadbalancer3',
+    status: 'ActiveActiveActive',
+  },
+];
+
+const headers = [
+  {
+    key: 'name',
+    header: 'Name',
+  },
+  {
+    key: 'status',
+    header: 'Status',
+  },
+  {
+    key: 'status',
+    header: 'Result 1',
+  },
+  {
+    key: 'status',
+    header: 'Result 2',
+  },
+  {
+    key: 'status',
+    header: 'Result 3',
+  },
+];
 
 function FormRenderTest() {
-  const { t } = useTranslation();
-  const headerTitle = t('formRenderTestTitle', 'Form Render Test');
-  const { patientUuid, dataTypeToRenderingMap } = useConfig() as ConfigObject;
-  const [formInput, setFormInput] = useState<OHRIFormSchema>();
-  const [formIntents, setFormIntents] = useState([]);
-  const [isIntentsDropdownDisabled, setIsIntentsDropdownDisabled] = useState(true);
-  const [selectedFormIntent, setSelectedFormIntent] = useState('');
-  const [inputErrorMessage, setInputErrorMessage] = useState<any>('');
-  const [outputErrorMessage, setOutputErrorMessage] = useState<any>('');
-  const [isSchemaLoaded, setIsSchemaLoaded] = useState(false);
-  const [schemaOutput, setSchemaOutput] = useState('');
-  const [encounterUuid, setEncounterUuid] = useState('');
-  const [schemaInput, setSchemaInput] = useState(null);
-  const [editorTheme, setEditorTheme] = useState('github');
-  const jsonUrl = useMemo(() => new URLSearchParams(window.location.search).get('json'), []);
-  const [key, setKey] = useState(0);
-  const [defaultJson, setDefaultJson] = useState(localStorage.getItem('forms-render-test:draft-form'));
-  // This is required because of the enforced CORS policy
-  const corsProxy = 'ohri-form-render.globalhealthapp.net';
+  const layout = useLayoutType();
 
-  const availableEditorThemes = [
-    'monokai',
-    'github',
-    'tomorrow',
-    'kuroir',
-    'twilight',
-    'xcode',
-    'solarized_dark',
-    'solarized_light',
-    'terminal',
-  ];
-
-  const loadIntentsFromSchema = (jsonSchema) => {
-    let _formIntents = jsonSchema.availableIntents || [];
-
-    if (_formIntents.length) {
-      setFormIntents(_formIntents);
-      setIsIntentsDropdownDisabled(false);
-      setSelectedFormIntent('');
-    } else {
-      setFormIntents([]);
-      setIsIntentsDropdownDisabled(true);
-      setSelectedFormIntent('*');
-    }
-  };
-
-  const updateFormIntentInput = (e) => {
-    setSelectedFormIntent(e.selectedItem.intent);
-    setIsSchemaLoaded(false);
-  };
-
-  const updateFormJsonInput = (json) => {
-    setInputErrorMessage('');
-    try {
-      const parsedSchema = typeof json == 'string' ? JSON.parse(json) : json;
-      setSchemaInput(parsedSchema);
-      setFormInput(parsedSchema);
-      loadIntentsFromSchema(parsedSchema);
-      localStorage.setItem('forms-render-test:draft-form', typeof json == 'string' ? json : JSON.stringify(json));
-    } catch (err) {
-      setInputErrorMessage(err.toString());
-    }
-    setIsSchemaLoaded(false);
-  };
-
-  const formValidation = () => {
-    handleFormValidation(schemaInput, dataTypeToRenderingMap).then((response) => console.log(response));
-  };
-
-  const handleFormSubmission = (e) => {
-    setIsSchemaLoaded(false);
-    setOutputErrorMessage('');
-    const filteredSchema = applyFormIntent(selectedFormIntent, loadSubforms(schemaInput));
-
-    try {
-      setSchemaOutput(JSON.stringify(filteredSchema, null, '  '));
-      setFormInput(filteredSchema);
-    } catch (err) {
-      setOutputErrorMessage(err.toString());
-    }
-
-    setIsSchemaLoaded(true);
-  };
-
-  const [windowSizeMode, setWindowSizeMode] = useState('minimized');
-
-  const toggleViewMode = useCallback(() => {
-    if (windowSizeMode === 'minimized') {
-      setWindowSizeMode('maximized');
-    } else {
-      setWindowSizeMode('minimized');
-    }
-  }, [windowSizeMode]);
-
-  useEffect(() => {
-    if (defaultJson && isIntentsDropdownDisabled) {
-      try {
-        const jsonObject = typeof defaultJson === 'string' ? JSON.parse(defaultJson) : defaultJson;
-        loadIntentsFromSchema(jsonObject);
-        setSchemaInput(jsonObject);
-      } catch (err) {}
-    }
-  }, [defaultJson]);
-
-  useEffect(() => {
-    if (jsonUrl) {
-      const dropboxURLSuffix = '?dl=1';
-      let url = jsonUrl.split('?')[0] + dropboxURLSuffix;
-      url = url.replace('www.dropbox.com', corsProxy);
-      fetch(url)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data) {
-            setDefaultJson(JSON.stringify(data, null, 2));
-            updateFormJsonInput(data);
-            setKey(key + 1);
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-        });
-    }
-  }, [jsonUrl]);
-
+  console.log(layout);
   return (
-    <div className={styles.container}>
-      <div className={styles.mainWrapper}>
-        <div className={styles.formRenderTitle}>{headerTitle}</div>
-        <div id="container" style={{ display: 'flex' }}>
-          <div style={{ width: '50%', display: windowSizeMode == 'maximized' ? 'none' : 'block' }}>
-            <h4>{t('jsonSchemaHeader', 'JSON Schema')}</h4>
-            <h5 style={{ color: 'orange', marginBottom: '1rem' }}>{inputErrorMessage}</h5>
-            <Tabs>
-              <TabList contained>
-                <Tab>{t('jsonInput', 'JSON Input')}</Tab>
-                <Tab>{t('finalSchema', 'Final Schema')}</Tab>
-              </TabList>
-              <TabPanels>
-                <TabPanel>
-                  <Form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleFormSubmission(e);
-                    }}>
-                    <AceEditor
-                      key={key}
-                      mode="json"
-                      theme={editorTheme}
-                      onChange={updateFormJsonInput}
-                      name={'jsonText'}
-                      placeholder={t('jsonText', 'Enter JSON Text')}
-                      showPrintMargin={true}
-                      showGutter={true}
-                      highlightActiveLine={true}
-                      width="100%"
-                      className={styles.jsonEditor}
-                      setOptions={{
-                        enableBasicAutocompletion: true,
-                        enableLiveAutocompletion: true,
-                        displayIndentGuides: true,
-                        enableSnippets: false,
-                        showLineNumbers: true,
-                        tabSize: 2,
-                      }}
-                      defaultValue={defaultJson}
-                    />
-
-                    <div className={styles.renderField}>
-                      <Dropdown
-                        titleText={t('formIntent', 'Form Intent')}
-                        label={t('selectForm', '--Select Form Intent')}
-                        items={formIntents}
-                        itemToString={(item) => item.display}
-                        onChange={updateFormIntentInput}
-                        disabled={isIntentsDropdownDisabled}
-                      />
-                    </div>
-
-                    <div className={styles.renderField}>
-                      <TextInput
-                        labelText={t('encounterUuid', 'Encounter Uuid')}
-                        placeholder={t('encounterUuidEntry', 'Enter Encounter Uuid')}
-                        onChange={(e) => setEncounterUuid(e.target.value)}
-                      />
-                    </div>
-
-                    <div className={styles.renderField}>
-                      <Dropdown
-                        titleText={t('jsonEditorThe', 'JSON Editor Theme')}
-                        label={editorTheme}
-                        items={availableEditorThemes}
-                        itemToString={(item) => item}
-                        onChange={(e) => {
-                          setEditorTheme(e.selectedItem);
-                        }}
-                      />
-                    </div>
-
-                    <Button style={{ marginTop: '1em' }} renderIcon={UserData} onClick={formValidation}>
-                      Validate Form
-                    </Button>
-
-                    <Button
-                      type="submit"
-                      renderIcon={Run}
-                      className="form-group"
-                      style={{ marginTop: '1em', marginLeft: '10px' }}
-                      disabled={!selectedFormIntent}>
-                      {t('render', 'Render')}
-                    </Button>
-                  </Form>
-                </TabPanel>
-                <TabPanel>
-                  <div className={styles.finalJsonSchema}>
-                    <AceEditor
-                      mode="json"
-                      theme={editorTheme}
-                      value={schemaOutput}
-                      name={'json-schema-result'}
-                      placeholder=""
-                      showPrintMargin={true}
-                      showGutter={true}
-                      highlightActiveLine={true}
-                      width="100%"
-                      height="700px"
-                      readOnly={true}
-                      setOptions={{
-                        enableBasicAutocompletion: false,
-                        enableLiveAutocompletion: false,
-                        displayIndentGuides: true,
-                        enableSnippets: false,
-                        showLineNumbers: true,
-                        tabSize: 2,
-                      }}
-                    />
-                  </div>
-                </TabPanel>
-              </TabPanels>
-            </Tabs>
-          </div>
-          <div style={{ width: windowSizeMode == 'maximized' ? '100%' : '50%' }}>
-            <div className={styles.viewMode}>
-              <h4>{t('generatedForm', 'Generated Form')}</h4>
-              <Button renderIcon={Maximize} className={isSchemaLoaded ? styles.show : ''} onClick={toggleViewMode}>
-                {windowSizeMode == 'minimized' ? 'Maximize' : 'Minimize'}
-              </Button>
-            </div>
-            <div className={styles.formRenderContent}>
-              <h5 style={{ color: 'orange', marginBottom: '1rem' }}>{outputErrorMessage}</h5>
-              <Tabs>
-                <TabList contained>
-                  <Tab>{t('formRender', 'Form Render')}</Tab>
-                </TabList>
-                <TabPanels>
-                  <TabPanel className={styles.renderTab}>
-                    {isSchemaLoaded ? (
-                      <div className={styles.formRenderDisplay}>
-                        <OHRIForm
-                          formJson={formInput}
-                          patientUUID={patientUuid}
-                          mode={encounterUuid ? 'edit' : 'enter'}
-                          encounterUUID={encounterUuid}
-                        />
-                      </div>
-                    ) : (
-                      <p>{t('submitForm', 'Please submit the form')}</p>
-                    )}
-                  </TabPanel>
-                </TabPanels>
-              </Tabs>
-            </div>
-          </div>
-        </div>
+    <div className={styles.playground}>
+      <div className={styles.textParent}>
+        <TextInput id="text-input-1" type="text" labelText="Text input label" helperText="Add a string value" />
       </div>
+      <div className={styles.radioParent}>
+        <RadioButtonGroup legendText="Group label" name="radio-button-group" defaultSelected="radio-1">
+          <RadioButton labelText="Radio button label" value="radio-1" id="radio-1" />
+          <RadioButton labelText="Radio button label" value="radio-2" id="radio-2" />
+          <RadioButton labelText="Radio button label" value="radio-3" id="radio-3" />
+        </RadioButtonGroup>
+      </div>
+      <br />
+      <div className={styles.numberParent}>
+        <NumberInput
+          id="carbon-number"
+          min={0}
+          max={100}
+          value={50}
+          label="NumberInput label"
+          helperText="Optional helper text."
+          invalidText="Number is not valid"
+        />
+      </div>
+      <br />
+      <div className={styles.selectParent}>
+        <Select id={`select-1`} labelText="Select an option" helperText="Choose from the following">
+          <SelectItem value="" text="" />
+          <SelectItem value="option-1" text="Option 1" />
+          <SelectItem value="option-2" text="Option 2" />
+          <SelectItem value="option-2" text="Option 3" />
+          <SelectItem value="option-2" text="Option 4" />
+          <SelectItem value="option-2" text="Option 5" />
+        </Select>
+      </div>
+      <br />
+      <div className={styles.dataTableParent}>
+        <DataTable rows={rows} headers={headers}>
+          {({ rows, headers, getTableProps, getHeaderProps, getRowProps }) => (
+            <Table {...getTableProps()}>
+              <TableHead>
+                <TableRow>
+                  {headers.map((header) => (
+                    <TableHeader {...getHeaderProps({ header })}>{header.header}</TableHeader>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rows.map((row) => (
+                  <TableRow {...getRowProps({ row })}>
+                    {row.cells.map((cell) => (
+                      <TableCell key={cell.id}>{cell.value}</TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DataTable>
+      </div>
+      <br />
+      <span>
+        {' '}
+        Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's
+        standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make
+        a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting,
+        remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing
+        Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions
+        of Lorem Ipsum
+      </span>
+      <br />
+      <br />
+      {/* <div className="container" style={{ width: '100%' }}>
+        <div className="row" style={{ width: '100%', display: 'flex', justifyContent: 'space-between' }}>
+          <div className="column"></div>
+        </div>
+      </div> */}
+      <Grid>
+        <Column sm={4} style={{ background: 'blue' }}>
+          <span>Span 25%</span>
+        </Column>
+        <Column sm={4} style={{ background: 'red' }}>
+          <span>Span 25%</span>
+        </Column>
+        <Column sm={4} style={{ background: 'yellow' }}>
+          <span>Span 25%</span>
+        </Column>
+        <Column sm={4} style={{ background: 'pink' }}>
+          <span>Span 25%</span>
+        </Column>
+      </Grid>
+      <br />
+      <Grid>
+        <Column xs={12} sm={12} md={6} lg={4} style={{ background: 'orange' }}>
+          <span>Span 25%</span>
+        </Column>
+      </Grid>
     </div>
   );
 }
