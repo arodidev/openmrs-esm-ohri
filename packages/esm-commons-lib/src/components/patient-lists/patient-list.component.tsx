@@ -18,7 +18,7 @@ import {
 import styles from './patient-list.scss';
 import { useTranslation } from 'react-i18next';
 import { usePatientList } from '../../hooks/usePatientList';
-import { EmptyState } from '@openmrs/esm-patient-common-lib';
+import { EmptyState } from '../../../../esm-commons-lib/src/components/empty-state/empty-state.component';
 import { navigate } from '@openmrs/esm-framework';
 // eslint-disable-next-line no-restricted-imports
 import { debounce } from 'lodash';
@@ -38,6 +38,7 @@ export const PatientList: React.FC = () => {
   const [page, setPage] = useState(1);
   const [totalPatientCount, setPatientCount] = useState(0);
 
+  console.log(patients);
   useEffect(() => {
     // Carbon's pagination component supports a max of 10,000 items
     // see: https://github.com/carbon-design-system/carbon/issues/6836
@@ -75,7 +76,7 @@ export const PatientList: React.FC = () => {
   return (
     <div>
       {isLoading && !searchTerm ? (
-        <div data-testid="data-table-skeleton">
+        <div data-testid="data-skeleton-id">
           <DataTableSkeleton rowCount={5} columnCount={4} />
         </div>
       ) : patients?.length > 0 ? (
@@ -143,3 +144,5 @@ export const PatientList: React.FC = () => {
     </div>
   );
 };
+
+export default PatientList;
