@@ -47,6 +47,11 @@ export const configSchema = {
       mchEncounterTypeEncounterType: '12de5bc5-352e-4faf-9961-a2125085a75c',
     },
   },
+  showPregnancySummaryCard: {
+    _type: Type.Boolean,
+    _description: 'Shows or hides pregnacny summary card',
+    _default: true,
+  },
   obsConcepts: {
     _type: Type.Object,
     _description: 'List of observation concept UUIDs related to PMTCT.',
@@ -114,4 +119,5 @@ export interface ConfigObject {
   obsConcepts: Object;
   formNames: Object;
   formUuids: Object;
+  showPregnancySummaryCard: Boolean;
 }

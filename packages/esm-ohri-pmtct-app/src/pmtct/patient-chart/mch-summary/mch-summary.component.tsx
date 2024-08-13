@@ -37,17 +37,17 @@ const MaternalSummary: React.FC<PatientChartProps> = ({ patientUuid }) => {
       ) : (
         <div className={styles.tabContainer}>
           {age > 10 ? (
-            <Tabs>
-              <TabList contained>
-                <Tab>{t('recentPregnancy', 'Recent Pregnancy')}</Tab>
-              </TabList>
-              <TabPanels>
-                <TabPanel>
-                  <CurrentPregnancy patientUuid={patientUuid} pTrackerId={pTrackerId} />
-                </TabPanel>
-              </TabPanels>
-            </Tabs>
+            // <Tabs>
+            //   <TabList contained>
+            //     <Tab>{t('recentPregnancy', 'Recent Pregnancy')}</Tab>
+            //   </TabList>
+            //   <TabPanels>
+            //     <TabPanel>
+            <CurrentPregnancy patientUuid={patientUuid} pTrackerId={pTrackerId} />
           ) : (
+            //     </TabPanel>
+            //   </TabPanels>
+            // </Tabs>
             <Tabs>
               <TabList contained>
                 <Tab>{t('hivExposedInfant', 'HIV Exposed Infant')}</Tab>

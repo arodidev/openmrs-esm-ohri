@@ -97,6 +97,8 @@ const CurrentPregnancy: React.FC<PatientChartProps> = ({ patientUuid, pTrackerId
     },
   ];
 
+  const { showPregnancySummaryCard } = config;
+
   const getParentRelationships = useCallback(async () => {
     let relationships = [];
     const relationshipsData = await fetchPatientRelationships(patientUuid);
@@ -236,11 +238,13 @@ const CurrentPregnancy: React.FC<PatientChartProps> = ({ patientUuid, pTrackerId
 
   return (
     <div>
-      <SummaryCard patientUuid={patientUuid} headerTitle={currentPregnancyHeader} columns={recentPregnancyTabs} />
+      {/* {showPregnancySummaryCard && (
+        <SummaryCard patientUuid={patientUuid} headerTitle={currentPregnancyHeader} columns={recentPregnancyTabs} />
+      )}
       <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem', height: '15rem' }}>
         <SummaryCard patientUuid={patientUuid} headerTitle={arvTherapyHeader} columns={arvTherapyTabs} />
         <SummaryCard patientUuid={patientUuid} headerTitle={appointmentsHeader} columns={appointmentSummaryTabs} />
-      </div>
+      </div> */}
 
       <div style={{ marginTop: '1rem', marginBottom: '1rem' }}>
         <ExpandableList
@@ -272,7 +276,11 @@ const CurrentPregnancy: React.FC<PatientChartProps> = ({ patientUuid, pTrackerId
         />
       </div>
 
-      <EncounterListTabsComponent patientUuid={patientUuid} configSchema={motherPreviousVisitConfigSchema} config={config} />
+      <EncounterListTabsComponent
+        patientUuid={patientUuid}
+        configSchema={motherPreviousVisitConfigSchema}
+        config={config}
+      />
     </div>
   );
 };
